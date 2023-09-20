@@ -81,25 +81,27 @@ struct opts_struct
 
 void messageArrived(MessageData* md)
 {
-	//unsigned char testbuffer[100];
 	MQTTMessage* message = md->message;
 	MQTTString* topic = md->topicName;
 	char msg_payload[10];
 	char msg_topic[10];
+
 	sprintf(msg_topic, "%.*s", (int)topic->lenstring.len,(char*)topic->lenstring.data);
 	sprintf(msg_payload, "%.*s", (int)message->payloadlen, (char*)message->payload);
+
 	printf("%s\r\n", msg_payload);
 	printf("%s\r\n", msg_topic);
 
-	if(strcmp(msg_payload, "true")==0){
-		printf("ga\r\n");
-	}
-	else if(strcmp(msg_payload, "false")==0){
-		printf("ga2\r\n");
+	if(!strcmp(msg_topic, "cabina01/mesa")){
+		if(!strcmp(msg_payload, "true"))
+			printf("prende\r\n");
+		else if(!strcmp(msg_payload, "false"))
+			printf("apaga\r\n");
 	}
 }
 
-
+char *topics[] = {"mesa", "repisa"};
+int ncabinas = 9;
 
 unsigned char tempBuffer[BUFFER_SIZE] = {};
 /* USER CODE END PV */
@@ -112,6 +114,7 @@ static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 static void PHYStatusCheck(void);
 static void PrintPHYConf(void);
+static void subscriptionTopics(int rc, Client c);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -188,12 +191,8 @@ int main(void)
   data.cleansession = 1;
 
   rc = MQTTConnect(&c, &data);
-  printf("Connected %d\r\n", rc);
-  opts.showtopics = 1;
 
-  printf("Subscribing to %s\r\n", "Hola/test");
-  rc = MQTTSubscribe(&c, "Hola/test", opts.qos, messageArrived);
-  printf("Subscribed %d\r\n", rc);
+  subscriptionTopics(rc, c);
 
   while (1)
   {
@@ -407,6 +406,22 @@ void PrintPHYConf(void)
 	{
 		printf("\n\rSpeed: 100Mbps");
 	}
+}
+
+static void subscriptionTopics(int rc,Client c){
+	if (rc == SUCCESSS){
+		printf("Success connection to MQTT Broker\r\n");
+		for (int i=0; i<ncabinas; i++){
+			for (int j=0; j<2; j++){
+				char buf[30];
+				snprintf(buf, 30, "cabina0%d/%s", i+1, topics[j]);
+				printf("Subscribing to %s\r\n", buf);
+				MQTTSubscribe(&c, buf, opts.qos, messageArrived);
+			}
+		}
+	}
+	else if(rc == FAILURE)
+		printf("Failed connection to MQTT Broker\r\n");
 }
 /* USER CODE END 4 */
 
