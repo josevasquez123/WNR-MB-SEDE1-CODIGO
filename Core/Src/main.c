@@ -79,6 +79,7 @@ struct opts_struct
 	(char*)"stdout-subscriber", 1, (char*)"\n", QOS1, "", "", (char*)"localhost", 1883, 0
 };
 
+//FUNCION QUE SE EJECUTA CADA VEZ QUE VIENE UN NUEVO MENSAJE EN UNO DE LOS TOPICOS SUSCRITOS
 void messageArrived(MessageData* md)
 {
 	MQTTMessage* message = md->message;
@@ -86,8 +87,8 @@ void messageArrived(MessageData* md)
 	char msg_payload[10];
 	char msg_topic[10];
 
-	sprintf(msg_topic, "%.*s", (int)topic->lenstring.len,(char*)topic->lenstring.data);
-	sprintf(msg_payload, "%.*s", (int)message->payloadlen, (char*)message->payload);
+	sprintf(msg_topic, "%.*s", (int)topic->lenstring.len,(char*)topic->lenstring.data);		//TOPICO
+	sprintf(msg_payload, "%.*s", (int)message->payloadlen, (char*)message->payload);		//PAYLOAD
 
 	printf("%s\r\n", msg_payload);
 	printf("%s\r\n", msg_topic);
@@ -163,11 +164,11 @@ int main(void)
   MX_SPI1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  W5500Init();
+  W5500Init();												//INICIALIZA EL WIZ5500
 
-  ctlnetwork(CN_SET_NETINFO, (void*) &WIZNETINFO);
+  ctlnetwork(CN_SET_NETINFO, (void*) &WIZNETINFO);			//ENVIA LA INFO DE LA MAC, DNS, IP
 
-  PHYStatusCheck();
+  PHYStatusCheck();											//CHEQUEA QUE LA CAPA FISICA ESTE CORRECTAMENTE
   PrintPHYConf();
   /* USER CODE END 2 */
 
@@ -180,9 +181,10 @@ int main(void)
 
   n.my_socket = 0;
   NewNetwork(&n);
-  ConnectNetwork(&n, MQTTBroker, targetPort);
-  MQTTClient(&c,&n,1000,buf,100,tempBuffer,2048);
+  ConnectNetwork(&n, MQTTBroker, targetPort);				//DATOS DE CONEXION PASADOS A LA VARIABLE N
+  MQTTClient(&c,&n,1000,buf,100,tempBuffer,2048);			//PASA LA INFORMACION A LA VARIABLE C
 
+  //DATOS DE LA CONEXION DEL CLIENTE
   MQTTPacket_connectData data = MQTTPacket_connectData_initializer;
   data.willFlag = 0;
   data.MQTTVersion = 3;
@@ -190,16 +192,16 @@ int main(void)
   data.keepAliveInterval = 60;
   data.cleansession = 1;
 
-  rc = MQTTConnect(&c, &data);
+  rc = MQTTConnect(&c, &data);								//CONEXION AL SERVIDOR MQTT
 
-  subscriptionTopics(rc, c);
-
+  subscriptionTopics(rc, c);								//SI LA CONEXION ES EXITOSA SE SUSCRIBE A LOS TOPICOS
+  	  	  	  	  	  	  	  	  	  	  	  	  	  	    //SINO NO SE SUSCRIBE A NADA
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  MQTTYield(&c, 1000);
+	  MQTTYield(&c, 1000);									//HACE LA RECONEXION EN CASO SE CAIGA
   }
   /* USER CODE END 3 */
 }
